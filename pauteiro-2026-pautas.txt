@@ -1,5 +1,5 @@
 PAUTEIRO! | Livro de pautas 2026
-Base atualizada em 18/04/2026. Abril esta preenchido nesta rodada; os demais meses seguem abertos na estrutura anual.
+Base atualizada em 01/05/2026. Abril foi fechado ate 30/04 e maio abriu com a primeira pauta factual da semana.
 
 JANEIRO
 Sem pautas fechadas nesta exportacao.
@@ -203,8 +203,78 @@ Documento: https://www.tjgo.jus.br/index.php/processos/dj-eletronico
 Marcador: Pagina do DJE atualizada em 17/04/2026.
 Acesso: 2026-04-18
 
+[2026-04-27] Senador Canedo | Dispensa emergencial | Saude e judicializacao
+Linha fina: Judicializacao da saude reaparece em compra emergencial com nome de medicamento e numero de processo.
+Lead: O Diario Oficial de Senador Canedo publicou em 27 de abril de 2026 a Dispensa Emergencial n. 052/2026 para aquisicao do medicamento ATENTAH 25 mg, em cumprimento a ordem judicial no processo n. 5840822-73.2025.8.09.0174.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14487
+Marcador: Edicao 394 | materia 14487 | Dispensa Emergencial n. 052/2026.
+Acesso: 2026-05-01
+
+[2026-04-28] Senador Canedo | Termo aditivo | Saude e gestao
+Linha fina: Parceria de saude com organizacao social recebe reajuste e ganha fator-noticia por impacto de gestao.
+Lead: Na edicao de 28 de abril de 2026, o diario de Senador Canedo trouxe o extrato do 2o termo aditivo ao Termo de Colaboracao n. 002/2024, elevando em 3,6% o valor global contratado com a AGIR.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14491
+Marcador: Edicao 395 | materia 14491 | 2o termo aditivo ao Termo de Colaboracao n. 002/2024.
+Acesso: 2026-05-01
+
+[2026-04-29] Estado de Goias | Pregao eletronico | Saude e licitacoes
+Linha fina: Compra estadual para o Lacen abre pauta de saude publica, laboratorio e abastecimento de insumos.
+Lead: A SES-GO publicou em 29 de abril de 2026 o aviso do Pregao Eletronico SRP n. 81/2026 para aquisicao de consumiveis e reagentes laboratoriais destinados ao Lacen-GO, com valor total estimado em R$ 579.987,80.
+Fonte: SES-GO
+Documento: https://goias.gov.br/saude/aviso-de-licitacao-do-p-e-n-o-081-2026/
+Marcador: P.E. SRP n. 81/2026 | Lacen-GO | valor estimado de R$ 579.987,80.
+Acesso: 2026-05-01
+
+[2026-04-29] Senador Canedo | Inexigibilidade | Cultura e gasto publico
+Linha fina: Contratacao artistica por inexigibilidade recoloca gasto com evento no radar da semana.
+Lead: O Diario Oficial de Senador Canedo publicou em 29 de abril de 2026 a Inexigibilidade de Licitacao n. 035/2026 para contratacao da Banda Missionario Shalom, atracao prevista para a 4a edicao do Celebrai.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14513
+Marcador: Edicao 396 | materia 14513 | Inexigibilidade n. 035/2026.
+Acesso: 2026-05-01
+
+[2026-04-30] Estado de Goias | Portaria | Saude e repasses
+Linha fina: Repasses de investimento para hospital regional entram na pauta com valor fechado e destinatario nominal.
+Lead: A Secretaria de Estado da Saude publicou em 30 de abril de 2026 o extrato da Portaria n. 1015/2026, autorizando transferencia de R$ 68.160,00 para a FUNDAHC, mantenedora do Hospital Estadual de Jatai Dr. Serafim de Carvalho.
+Fonte: SES-GO
+Documento: https://goias.gov.br/saude/extrato-da-portaria-no-1015-2026-ses-go/
+Marcador: Portaria n. 1015/2026 | repasse de R$ 68.160,00 para a FUNDAHC/HEJ.
+Acesso: 2026-05-01
+
+[2026-04-30] Senador Canedo | Suspensao de pregao | Tecnologia e gestao
+Linha fina: Suspensao de licitacao ampla de software mexe com a espinha dorsal administrativa da prefeitura.
+Lead: O municipio publicou em 30 de abril de 2026 o aviso de suspensao do Pregao Eletronico n. 42/2026, que buscava contratar software de gestao publica integrado para administracao direta, autarquias, fundos e Camara.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14589
+Marcador: Edicao 397 | materia 14589 | Suspensao do P.E. n. 42/2026.
+Acesso: 2026-05-01
+
+[2026-04-30] Senador Canedo | Notificacao contratual | Contratos e controle
+Linha fina: Cobranca formal a fornecedor vira pauta quente por risco de rescisao e sancao administrativa.
+Lead: A Prefeitura de Senador Canedo publicou em 30 de abril de 2026 notificacao e advertencia a Global Tech Comercial e Servicos Ltda. por atraso na entrega de itens contratados, com possibilidade de extincao da ata de registro de precos e abertura de apuracao.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14591
+Marcador: Edicao 397 | materia 14591 | notificacao e advertencia a Global Tech.
+Acesso: 2026-05-01
+
+[2026-04-30] Senador Canedo | Credito suplementar | Orcamento e mobilidade
+Linha fina: Virada orcamentaria de fim de mes entra na base como uma das cifras mais altas da semana municipal.
+Lead: O Decreto Suplementar n. 69, publicado em 30 de abril de 2026, abre credito adicional de R$ 3.197.166,26 em Senador Canedo, com impacto em rubricas ligadas a infraestrutura urbana, acessibilidade e mobilidade.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14598
+Marcador: Edicao 397 | materia 14598 | Decreto Suplementar n. 69.
+Acesso: 2026-05-01
+
 MAIO
-Sem pautas fechadas nesta exportacao.
+[2026-05-01] Senador Canedo | Calendario fiscal | Tributos e servicos
+Linha fina: Prazo de tributo municipal muda no inicio de maio e entra como servico quente para a cidade.
+Lead: A Portaria n. 0006/2026 da Secretaria Municipal de Fazenda de Senador Canedo, publicada em 1o de maio de 2026, prorrogou para 15 de maio o pagamento da parcela unica e da primeira parcela do IPTU e do ITU de 2026.
+Fonte: Diario Oficial de Senador Canedo
+Documento: https://diario.senadorcanedo.go.gov.br/api/articles/pdf?id=14638
+Marcador: Edicao 398 | materia 14638 | Portaria n. 0006/2026 - SEFAZ.
+Acesso: 2026-05-01
 
 JUNHO
 Sem pautas fechadas nesta exportacao.
