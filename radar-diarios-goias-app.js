@@ -13,6 +13,440 @@
   var CUTOFF = new Date(DATA.cutoff_date + "T00:00:00");
   var DAYS_IN_MONTH = new Date(MONTH_START.getFullYear(), MONTH_START.getMonth() + 1, 0).getDate();
 
+  // ── Gemini API ────────────────────────────────────────────────────────────
+
+  var GEMINI_KEY_STORAGE = "pauteiro:gemini-api-key";
+  var GEMINI_MODEL_STORAGE = "pauteiro:gemini-model";
+  var GEMINI_SYSTEM_PROMPT = [
+    "Voce e um assistente jornalistico especializado em diarios oficiais do Estado de Goias.",
+    "Analise o ato oficial abaixo e produza:",
+    "1) Lead jornalistico objetivo (1 paragrafo)",
+    "2) Linha fina com o dado central (1 frase curta)",
+    "3) Caminho de apuracao (3 acoes praticas)",
+    "4) Alertas de interesse publico (pontos que merecem atencao editorial).",
+    "Responda sempre em portugues do Brasil. Seja direto e objetivo."
+  ].join(" ");
+
+  var OPENAI_KEY_STORAGE = "pauteiro:openai-api-key";
+  var OPENAI_MODEL = "gpt-4o-mini";
+  var OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+
+  function getGeminiKey() {
+    if (window.GEMINI_API_KEY) return window.GEMINI_API_KEY;
+    if (!storageAvailable()) return "";
+    return window.localStorage.getItem(GEMINI_KEY_STORAGE) || "";
+  }
+
+  function getGeminiModel() {
+    if (window.GEMINI_MODEL) return window.GEMINI_MODEL;
+    if (!storageAvailable()) return "gemini-2.5-flash";
+    return window.localStorage.getItem(GEMINI_MODEL_STORAGE) || "gemini-2.5-flash";
+  }
+
+  function getOpenAIKey() {
+    if (window.OPENAI_API_KEY) return window.OPENAI_API_KEY;
+    if (!storageAvailable()) return "";
+    return window.localStorage.getItem(OPENAI_KEY_STORAGE) || "";
+  }
+
+  function saveApiKeys(geminiKey, openAIKey, geminiModel) {
+    if (!storageAvailable()) return false;
+    if (geminiKey !== undefined) {
+      if (geminiKey) window.localStorage.setItem(GEMINI_KEY_STORAGE, geminiKey.trim());
+      else window.localStorage.removeItem(GEMINI_KEY_STORAGE);
+    }
+    if (openAIKey !== undefined) {
+      if (openAIKey) window.localStorage.setItem(OPENAI_KEY_STORAGE, openAIKey.trim());
+      else window.localStorage.removeItem(OPENAI_KEY_STORAGE);
+    }
+    if (geminiModel !== undefined) {
+      if (geminiModel) window.localStorage.setItem(GEMINI_MODEL_STORAGE, geminiModel.trim());
+      else window.localStorage.removeItem(GEMINI_MODEL_STORAGE);
+    }
+    return true;
+  }
+
+  function callGeminiApi(promptText, onSuccess, onError) {
+    var key = getGeminiKey();
+    if (!key) {
+      onError("Chave da API Gemini nao configurada. Configure as APIs para continuar.");
+      return;
+    }
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + getGeminiModel() + ":generateContent?key=" + encodeURIComponent(key);
+    var body = JSON.stringify({
+      system_instruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: promptText }] }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
+    });
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.error) {
+          onError("Gemini API: " + (data.error.message || "erro desconhecido"));
+          return;
+        }
+        var text = ((((data.candidates || [])[0] || {}).content || {}).parts || [])[0];
+        if (text && text.text) {
+          onSuccess(text.text);
+        } else {
+          onError("Gemini nao retornou texto. Verifique a chave e tente novamente.");
+        }
+      })
+      .catch(function (err) {
+        onError("Erro de rede ao chamar Gemini: " + (err.message || String(err)));
+      });
+  }
+
+  function callOpenAIApi(promptText, onSuccess, onError) {
+    var key = getOpenAIKey();
+    if (!key) {
+      onError("Chave da OpenAI (ChatGPT) nao configurada. Configure as APIs para continuar.");
+      return;
+    }
+    var body = JSON.stringify({
+      model: OPENAI_MODEL,
+      messages: [
+        { role: "system", content: GEMINI_SYSTEM_PROMPT },
+        { role: "user", content: promptText }
+      ],
+      temperature: 0.4,
+      max_tokens: 1024
+    });
+    fetch(OPENAI_ENDPOINT, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + key
+      },
+      body: body
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.error) {
+          onError("OpenAI API: " + (data.error.message || "erro desconhecido"));
+          return;
+        }
+        var message = (data.choices && data.choices[0] && data.choices[0].message) ? data.choices[0].message.content : null;
+        if (message) {
+          onSuccess(message);
+        } else {
+          onError("ChatGPT nao retornou texto. Verifique a chave e tente novamente.");
+        }
+      })
+      .catch(function (err) {
+        onError("Erro de rede ao chamar OpenAI: " + (err.message || String(err)));
+      });
+  }
+
+  function renderApiConfigModal() {
+    var gKey = !!getGeminiKey() ? "••••••••••••••••" : "";
+    var oKey = !!getOpenAIKey() ? "••••••••••••••••" : "";
+    return [
+      "<div class='api-modal-overlay' id='api-modal-overlay' style='display:none;'>",
+      "<div class='api-modal-content'>",
+      "<div class='api-modal-header'>",
+      "<h2>Configurar Inteligência Artificial</h2>",
+      "<button class='api-modal-close' id='api-modal-close'>&times;</button>",
+      "</div>",
+      "<div class='api-modal-body'>",
+      "<p class='api-modal-intro'>O PAUTEIRO! processa as pautas diretamente no seu navegador. Defina as chaves de API para rodar a análise <em>inline</em>. Seus dados ficam salvos apenas neste dispositivo.</p>",
+      "<div class='api-config-group'>",
+      "<label>Gemini API Key (Google)</label>",
+      "<input class='api-key-input' id='modal-gemini-key' type='password' placeholder='AIza...' value='" + escapeHtml(gKey) + "'>",
+      "<select class='api-key-input' id='modal-gemini-model' style='margin-top:4px;'>",
+      "<option value='gemini-2.5-flash'" + (getGeminiModel() === 'gemini-2.5-flash' ? ' selected' : '') + ">Gemini 2.5 Flash</option>",
+      "<option value='gemini-2.5-flash-lite'" + (getGeminiModel() === 'gemini-2.5-flash-lite' ? ' selected' : '') + ">Gemini 2.5 Flash Lite (Recomendado/Free)</option>",
+      "<option value='gemini-3-flash-preview'" + (getGeminiModel() === 'gemini-3-flash-preview' ? ' selected' : '') + ">Gemini 3 Flash Preview</option>",
+      "<option value='gemini-3.1-flash-lite'" + (getGeminiModel() === 'gemini-3.1-flash-lite' ? ' selected' : '') + ">Gemini 3.1 Flash Lite</option>",
+      "<option value='gemini-3.1-pro-preview'" + (getGeminiModel() === 'gemini-3.1-pro-preview' ? ' selected' : '') + ">Gemini 3.1 Pro Preview</option>",
+      "</select>",
+      "<small>Gratuito. Obtenha em: <a href='https://aistudio.google.com/app/apikey' target='_blank' rel='noopener noreferrer'>aistudio.google.com</a></small>",
+      "</div>",
+      "<div class='api-config-group'>",
+      "<label>OpenAI API Key (ChatGPT)</label>",
+      "<input class='api-key-input' id='modal-openai-key' type='password' placeholder='sk-...' value='" + escapeHtml(oKey) + "'>",
+      "<small>Pago (por token). Obtenha em: <a href='https://platform.openai.com/api-keys' target='_blank' rel='noopener noreferrer'>platform.openai.com</a></small>",
+      "</div>",
+      "<p class='api-env-note'>Alternativa: Crie um arquivo <code>env.js</code> local para carregar globalmente.</p>",
+      "</div>",
+      "<div class='api-modal-footer'>",
+      "<button class='assistant-button' type='button' id='api-modal-clear'>Remover Chaves</button>",
+      "<button class='assistant-button api-save-btn' type='button' id='api-modal-save'>Salvar e Atualizar</button>",
+      "</div>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function attachGlobalApiModal() {
+    if (!document.getElementById("api-modal-overlay")) {
+      var div = document.createElement("div");
+      div.innerHTML = renderApiConfigModal();
+      document.body.appendChild(div.firstElementChild);
+
+      var overlay = document.getElementById("api-modal-overlay");
+      var closeBtn = document.getElementById("api-modal-close");
+      var saveBtn = document.getElementById("api-modal-save");
+      var clearBtn = document.getElementById("api-modal-clear");
+      var gInput = document.getElementById("modal-gemini-key");
+      var oInput = document.getElementById("modal-openai-key");
+      var mInput = document.getElementById("modal-gemini-model");
+
+      function closeModal() { overlay.style.display = "none"; }
+      function openModal() { overlay.style.display = "flex"; }
+
+      // Adicionar botão global no body (fixed position)
+      var globalBtn = document.createElement("button");
+      globalBtn.className = "global-api-btn";
+      globalBtn.innerHTML = "⚙️ APIs IA";
+      globalBtn.title = "Configurar chaves de IA (Gemini / ChatGPT)";
+      globalBtn.onclick = openModal;
+      document.body.appendChild(globalBtn);
+
+      closeBtn.addEventListener("click", closeModal);
+      overlay.addEventListener("click", function(e) { if(e.target === overlay) closeModal(); });
+
+      saveBtn.addEventListener("click", function() {
+        var gVal = gInput.value.trim();
+        var oVal = oInput.value.trim();
+        var mVal = mInput ? mInput.value : undefined;
+        var geminiToSave = (gVal && gVal.indexOf("•") === -1) ? gVal : (gVal === "" ? "" : undefined);
+        var openaiToSave = (oVal && oVal.indexOf("•") === -1) ? oVal : (oVal === "" ? "" : undefined);
+        
+        saveApiKeys(geminiToSave, openaiToSave, mVal);
+        saveBtn.textContent = "Salvando...";
+        setTimeout(function() { window.location.reload(); }, 600);
+      });
+
+      clearBtn.addEventListener("click", function() {
+        saveApiKeys("", "", "gemini-2.5-flash");
+        gInput.value = "";
+        oInput.value = "";
+        if (mInput) mInput.value = "gemini-2.5-flash";
+        clearBtn.textContent = "Removido!";
+        setTimeout(function() { window.location.reload(); }, 600);
+      });
+    }
+  }
+
+  // Chamar injetor global do modal na primeira vez
+  setTimeout(attachGlobalApiModal, 100);
+
+  // ── Fim AI API ────────────────────────────────────────────────────────────
+
+  // ── Gerenciamento de Coberturas (Fontes) ──────────────────────────────────
+
+  var COVERAGE_STORAGE = "pauteiro:coverage-sources";
+
+  function getCoverageSources() {
+    var defaultSources = ARCHIVE.source_library || {};
+    if (!storageAvailable()) return defaultSources;
+    var stored = window.localStorage.getItem(COVERAGE_STORAGE);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error("Erro ao fazer parse das coberturas:", e);
+      }
+    }
+    return defaultSources;
+  }
+
+  function saveCoverageSources(sourcesObj) {
+    if (!storageAvailable()) return false;
+    window.localStorage.setItem(COVERAGE_STORAGE, JSON.stringify(sourcesObj));
+    return true;
+  }
+
+  function renderCoverageModal() {
+    var sources = getCoverageSources();
+    var keys = Object.keys(sources);
+    var itemsHtml = keys.map(function(k) {
+      var s = sources[k];
+      return [
+        "<div class='coverage-item-card' data-id='" + escapeHtml(k) + "'>",
+        "<div class='api-config-group'>",
+        "<label>ID da Fonte</label>",
+        "<input type='text' class='api-key-input cov-id' value='" + escapeHtml(k) + "' disabled title='O ID não pode ser editado. Para alterar o ID, exclua e crie uma nova fonte.'>",
+        "</div>",
+        "<div class='api-config-group'>",
+        "<label>Nome (Label)</label>",
+        "<input type='text' class='api-key-input cov-label' value='" + escapeHtml(s.label || "") + "' placeholder='Ex: Prefeitura de...'>",
+        "</div>",
+        "<div class='api-config-group'>",
+        "<label>Site Oficial (URL)</label>",
+        "<input type='text' class='api-key-input cov-url' value='" + escapeHtml(s.official_url || "") + "' placeholder='https://...'>",
+        "</div>",
+        "<div class='api-config-group'>",
+        "<label>Foco de Análise</label>",
+        "<input type='text' class='api-key-input cov-focus' value='" + escapeHtml(s.analysis_focus || "") + "' placeholder='Contratos, licitações...'>",
+        "</div>",
+        "<div class='api-config-group'>",
+        "<label>Tipos de Material</label>",
+        "<input type='text' class='api-key-input cov-material' value='" + escapeHtml(s.material_types || "") + "' placeholder='Diário oficial, extratos...'>",
+        "</div>",
+        "<div class='api-config-group'>",
+        "<label>Próximo Passo</label>",
+        "<input type='text' class='api-key-input cov-step' value='" + escapeHtml(s.next_step || "") + "' placeholder='O que o robô deve raspar a seguir...'>",
+        "</div>",
+        "<button type='button' class='assistant-button cov-remove-btn' style='margin-top:10px; background:var(--coral); color:#fff; border-color:var(--coral);'>Excluir Fonte</button>",
+        "</div>"
+      ].join("");
+    }).join("");
+
+    return [
+      "<div class='api-modal-overlay' id='coverage-modal-overlay' style='display:none;'>",
+      "<div class='api-modal-content' style='max-width: 600px; max-height: 90vh;'>",
+      "<div class='api-modal-header'>",
+      "<h2>Gerenciar Coberturas (Fontes)</h2>",
+      "<button class='api-modal-close' id='coverage-modal-close'>&times;</button>",
+      "</div>",
+      "<div class='api-modal-body' style='overflow-y:auto; background:var(--surface-soft);' id='coverage-list-container'>",
+      "<p class='api-modal-intro'>Edite os links e parâmetros das fontes de raspa. Estas alterações ficam salvas no cache do seu navegador.</p>",
+      itemsHtml,
+      "</div>",
+      "<div class='api-modal-footer' style='flex-direction: column; gap: 10px;'>",
+      "<div style='display:flex; justify-content:space-between; width:100%;'>",
+      "<button class='assistant-button' type='button' id='coverage-add-btn'>➕ Nova Fonte</button>",
+      "<button class='assistant-button' type='button' id='coverage-copy-btn'>📋 Copiar JSON</button>",
+      "</div>",
+      "<div style='display:flex; justify-content:space-between; width:100%; padding-top:10px; border-top:1px solid var(--line);'>",
+      "<button class='assistant-button' type='button' id='coverage-reset-btn'>Restaurar Padrão</button>",
+      "<button class='assistant-button api-save-btn' type='button' id='coverage-save-btn'>Salvar e Atualizar</button>",
+      "</div>",
+      "</div>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function attachGlobalCoverageModal() {
+    if (!document.getElementById("coverage-modal-overlay")) {
+      var div = document.createElement("div");
+      div.innerHTML = renderCoverageModal();
+      document.body.appendChild(div.firstElementChild);
+
+      var overlay = document.getElementById("coverage-modal-overlay");
+      var closeBtn = document.getElementById("coverage-modal-close");
+      var saveBtn = document.getElementById("coverage-save-btn");
+      var resetBtn = document.getElementById("coverage-reset-btn");
+      var addBtn = document.getElementById("coverage-add-btn");
+      var copyBtn = document.getElementById("coverage-copy-btn");
+      var listContainer = document.getElementById("coverage-list-container");
+
+      function closeModal() { overlay.style.display = "none"; }
+      function openModal() { overlay.style.display = "flex"; }
+
+      var globalBtn = document.createElement("button");
+      globalBtn.className = "global-api-btn global-coverage-btn";
+      globalBtn.innerHTML = "🔗 Coberturas";
+      globalBtn.title = "Gerenciar fontes e links";
+      globalBtn.onclick = openModal;
+      document.body.appendChild(globalBtn);
+
+      closeBtn.addEventListener("click", closeModal);
+      overlay.addEventListener("click", function(e) { if(e.target === overlay) closeModal(); });
+
+      // Event delegation for Remove buttons
+      listContainer.addEventListener("click", function(e) {
+        if (e.target.classList.contains("cov-remove-btn")) {
+          if (confirm("Remover esta fonte?")) {
+            e.target.closest(".coverage-item-card").remove();
+          }
+        }
+      });
+
+      addBtn.addEventListener("click", function() {
+        var newId = prompt("Digite o ID (slug) da nova fonte (ex: tce_go):");
+        if (!newId) return;
+        newId = slugify(newId);
+        if (listContainer.querySelector("[data-id='" + newId + "']")) {
+          alert("Já existe uma fonte com esse ID!");
+          return;
+        }
+        var newCard = document.createElement("div");
+        newCard.className = "coverage-item-card";
+        newCard.setAttribute("data-id", newId);
+        newCard.innerHTML = [
+          "<div class='api-config-group'>",
+          "<label>ID da Fonte</label><input type='text' class='api-key-input cov-id' value='" + escapeHtml(newId) + "' disabled>",
+          "</div>",
+          "<div class='api-config-group'>",
+          "<label>Nome (Label)</label><input type='text' class='api-key-input cov-label' value='' placeholder='Nome da fonte'>",
+          "</div>",
+          "<div class='api-config-group'>",
+          "<label>Site Oficial (URL)</label><input type='text' class='api-key-input cov-url' value='' placeholder='https://...'>",
+          "</div>",
+          "<div class='api-config-group'>",
+          "<label>Foco de Análise</label><input type='text' class='api-key-input cov-focus' value=''>",
+          "</div>",
+          "<div class='api-config-group'>",
+          "<label>Tipos de Material</label><input type='text' class='api-key-input cov-material' value=''>",
+          "</div>",
+          "<div class='api-config-group'>",
+          "<label>Próximo Passo</label><input type='text' class='api-key-input cov-step' value=''>",
+          "</div>",
+          "<button type='button' class='assistant-button cov-remove-btn' style='margin-top:10px; background:var(--coral); color:#fff; border-color:var(--coral);'>Excluir Fonte</button>"
+        ].join("");
+        listContainer.appendChild(newCard);
+        // Scroll to bottom
+        listContainer.scrollTop = listContainer.scrollHeight;
+      });
+
+      function buildObjectFromDom() {
+        var newSources = {};
+        var cards = listContainer.querySelectorAll(".coverage-item-card");
+        for (var i = 0; i < cards.length; i++) {
+          var c = cards[i];
+          var id = c.getAttribute("data-id");
+          newSources[id] = {
+            id: id,
+            label: c.querySelector(".cov-label").value.trim(),
+            official_url: c.querySelector(".cov-url").value.trim(),
+            analysis_focus: c.querySelector(".cov-focus").value.trim(),
+            material_types: c.querySelector(".cov-material").value.trim(),
+            next_step: c.querySelector(".cov-step").value.trim()
+          };
+        }
+        return newSources;
+      }
+
+      saveBtn.addEventListener("click", function() {
+        var newSources = buildObjectFromDom();
+        saveCoverageSources(newSources);
+        saveBtn.textContent = "Salvando...";
+        setTimeout(function() { window.location.reload(); }, 600);
+      });
+
+      resetBtn.addEventListener("click", function() {
+        if (confirm("Restaurar as fontes oficiais originais do sistema? Isso apagará suas edições locais.")) {
+          if (storageAvailable()) window.localStorage.removeItem(COVERAGE_STORAGE);
+          resetBtn.textContent = "Restaurando...";
+          setTimeout(function() { window.location.reload(); }, 600);
+        }
+      });
+
+      copyBtn.addEventListener("click", function() {
+        if (navigator.clipboard) {
+          var newSources = buildObjectFromDom();
+          var jsonStr = JSON.stringify(newSources, null, 2);
+          navigator.clipboard.writeText(jsonStr).then(function() {
+            copyBtn.textContent = "Copiado!";
+            setTimeout(function() { copyBtn.textContent = "📋 Copiar JSON"; }, 2000);
+          });
+        }
+      });
+    }
+  }
+
+  setTimeout(attachGlobalCoverageModal, 200);
+
+  // ── Fim Gerenciamento de Coberturas ───────────────────────────────────────
+
   function slugify(value) {
     return String(value || "")
       .toLowerCase()
@@ -455,10 +889,12 @@
   }
 
   function renderAssistantLinks(entry) {
+    var geminiStatus = getGeminiKey() ? "" : " is-inactive";
     return [
       "<div class='assistant-strip'>",
-      "<a class='assistant-link' href='" + assistantUrl(entry, "gpt") + "'>Texto GPT</a>",
-      "<a class='assistant-link' href='" + assistantUrl(entry, "notebook") + "'>Texto NotebookLM</a>",
+      "<a class='assistant-link' href='" + assistantUrl(entry, "gpt") + "'>Texto IA</a>",
+      "<a class='assistant-link" + geminiStatus + "' href='" + assistantUrl(entry, "gemini") + "'>Gemini inline</a>",
+      "<a class='assistant-link' href='" + assistantUrl(entry, "notebook") + "'>NotebookLM</a>",
       "<a class='assistant-link' href='" + workflowUrl(entry) + "'>Mesa hibrida</a>",
       "</div>"
     ].join("");
@@ -859,16 +1295,22 @@
 
   function renderYearSourceStatus(year) {
     var bucket = archiveYearBucket(year);
-    if (!bucket || !bucket.sources) return "";
-    var order = ["goiania", "estado", "mpgo", "municipios", "tjgo"];
+    var sourcesLib = getCoverageSources();
+    var bucketSources = (bucket && bucket.sources) ? bucket.sources : {};
+    
+    // Unir as chaves que existem no bucket e as que foram configuradas na UI
+    var keysMap = {};
+    Object.keys(sourcesLib).forEach(function(k) { keysMap[k] = true; });
+    Object.keys(bucketSources).forEach(function(k) { keysMap[k] = true; });
+    var order = Object.keys(keysMap);
+
     return [
       "<div class='sidebar-card'>",
       "<h3>Fontes em " + escapeHtml(String(year)) + "</h3>",
       "<ul class='year-source-list'>",
       order.map(function (key) {
-        var item = bucket.sources[key];
-        if (!item) return "";
-        var meta = ((ARCHIVE.source_library || {})[key]) || {};
+        var item = bucketSources[key] || { status: "pending", analysis_status: "pending", entry_count: 0, loaded_months: [] };
+        var meta = sourcesLib[key] || {};
         var label = item.label || meta.label || key;
         var links = [];
         if (item.official_url || meta.official_url) {
@@ -2787,7 +3229,8 @@
   function renderAssistantView() {
     var params = new URLSearchParams(window.location.search);
     var id = params.get("id") || "";
-    var tool = params.get("tool") === "notebook" ? "notebook" : "gpt";
+    var rawTool = params.get("tool") || "gpt";
+    var tool = rawTool === "notebook" ? "notebook" : (rawTool === "gemini" ? "gemini" : "gpt");
     var entry = entryMap[id];
 
     if (!entry) {
@@ -2796,23 +3239,73 @@
       return;
     }
 
-    var draft = assistantDraft(entry, tool);
-    var toolLabel = tool === "notebook" ? "NotebookLM" : "GPT";
+    var isGemini = tool === "gemini";
+    var isGPT = tool === "gpt";
+    var isAI = isGemini || isGPT;
+
+    var draft = assistantDraft(entry, isAI ? "gpt" : tool);
+    var toolLabel = tool === "notebook" ? "NotebookLM" : (isGemini ? "Gemini AI" : "ChatGPT");
     var externalUrl = tool === "notebook" ? "https://notebooklm.google.com/" : "https://chatgpt.com/";
+    
+    var hasGeminiKey = !!getGeminiKey();
+    var hasOpenAIKey = !!getOpenAIKey();
+    var hasKey = isGemini ? hasGeminiKey : hasOpenAIKey;
+
+    var switchLinks = [];
+    if (!isGPT) switchLinks.push("<a class='nav-pill' href='" + assistantUrl(entry, "gpt") + "'>Texto ChatGPT</a>");
+    if (!isGemini) switchLinks.push("<a class='nav-pill' href='" + assistantUrl(entry, "gemini") + "'>Texto Gemini</a>");
+    if (tool !== "notebook") switchLinks.push("<a class='nav-pill' href='" + assistantUrl(entry, "notebook") + "'>NotebookLM</a>");
 
     document.title = DATA.site_title + " | " + toolLabel + " | " + entry.city;
     root.className = "wrap page-shell";
+
+    var aiBadge = isGemini ? "<span class='gemini-badge'>✦ Gemini AI</span>" : "<span class='openai-badge'>✦ ChatGPT</span>";
+    var runBtnText = isGemini ? "Analisar com Gemini" : "Analisar com ChatGPT";
+    
+    var aiSection = isAI ? [
+      "<article class='assistant-draft-card gemini-card' id='ai-card'>",
+      "<div class='assistant-card-head'>",
+      "<p class='section-kicker'>" + aiBadge + "</p>",
+      "<h2>Analise inline com " + (isGemini ? "Gemini" : "ChatGPT") + "</h2>",
+      "</div>",
+      "<div class='gemini-output-wrap' id='ai-output-wrap'>",
+      "<pre class='assistant-draft gemini-output' id='ai-output'>",
+      hasKey
+        ? "Clique em '" + runBtnText + "' para receber a analise jornalistica diretamente aqui."
+        : "Configure as Chaves de API no botão '⚙️ APIs IA' na tela para ativar a analise inline.",
+      "</pre>",
+      "</div>",
+      "<div class='assistant-actions' id='ai-actions'>",
+      "<button class='assistant-button gemini-run-btn' type='button' id='ai-run-btn'" + (hasKey ? "" : " disabled") + ">",
+      hasKey ? runBtnText : "Configurar chave primeiro",
+      "</button>",
+      "<button class='assistant-button' type='button' id='ai-copy-btn' style='display:none'>Copiar analise</button>",
+      "</div>",
+      "</article>"
+    ].join("") : "";
+
+    var draftSection = [
+      "<article class='assistant-draft-card" + (isAI ? " is-compact" : "") + "'>",
+      "<div class='assistant-card-head'><p class='section-kicker'>Prompt de apoio</p><h2>" + (isAI ? "Texto base enviado para a IA" : "Saida pronta para copiar") + "</h2></div>",
+      "<pre class='assistant-draft" + (isAI ? " assistant-draft-compact" : "") + "' id='assistant-draft-text'>" + escapeHtml(draft) + "</pre>",
+      "<div class='assistant-actions'>",
+      "<button class='assistant-button' type='button' data-copy-text='" + escapeHtml(draft) + "'>Copiar texto</button>",
+      "<a class='assistant-button is-link' href='" + escapeHtml(externalUrl) + "' target='_blank' rel='noopener noreferrer'>Abrir site do " + escapeHtml(toolLabel) + "</a>",
+      "</div>",
+      "</article>"
+    ].join("");
+
     root.innerHTML = [
       "<header class='page-header'>",
       "<div>",
       "<p class='eyebrow'>PAUTEIRO! | Texto assistido</p>",
       "<h1 class='page-title'>" + escapeHtml(entry.title) + "</h1>",
-      "<p class='intro'>Aqui voce abre um texto-base por pauta. Ele nasce da base documental do PAUTEIRO! e ja fica pronto para levar ao " + escapeHtml(toolLabel) + " ou para reaproveitar na redacao.</p>",
+      "<p class='intro'>Analise jornalistica da pauta com " + escapeHtml(toolLabel) + ". O prompt nasce da base documental do PAUTEIRO!.</p>",
       "<div class='nav-row'>",
       "<a class='nav-pill' href='" + MONTH_PAGE + "'>Voltar ao indice</a>",
       "<a class='nav-pill' href='" + dayUrl(entry.date) + "'>Abrir o dia</a>",
       "<a class='nav-pill' href='" + workflowUrl(entry) + "'>Mesa hibrida</a>",
-      "<a class='nav-pill' href='" + assistantUrl(entry, tool === "gpt" ? "notebook" : "gpt") + "'>Trocar de ferramenta</a>",
+      switchLinks.join(""),
       "</div>",
       "</div>",
       "<aside class='sidebar-card'>",
@@ -2824,14 +3317,8 @@
       "</aside>",
       "</header>",
       "<section class='assistant-page-grid'>",
-      "<article class='assistant-draft-card'>",
-      "<div class='assistant-card-head'><p class='section-kicker'>Texto " + escapeHtml(toolLabel) + "</p><h2>Saida pronta para copiar</h2></div>",
-      "<pre class='assistant-draft' id='assistant-draft-text'>" + escapeHtml(draft) + "</pre>",
-      "<div class='assistant-actions'>",
-      "<button class='assistant-button' type='button' data-copy-text='" + escapeHtml(draft) + "'>Copiar texto</button>",
-      "<a class='assistant-button is-link' href='" + escapeHtml(externalUrl) + "' target='_blank' rel='noopener noreferrer'>Abrir " + escapeHtml(toolLabel) + "</a>",
-      "</div>",
-      "</article>",
+      aiSection,
+      draftSection,
       "<aside class='note-stack'>",
       "<div class='note-card'><h3>Sublead</h3><p class='muted'>" + escapeHtml(getSublead(entry)) + "</p></div>",
       "<div class='note-card'><h3>Lead</h3><p class='muted'>" + escapeHtml(getLead(entry)) + "</p></div>",
@@ -2840,18 +3327,68 @@
       "</section>"
     ].join("");
 
+    // Evento de copiar texto-prompt
     var copyButton = root.querySelector("[data-copy-text]");
     if (copyButton && navigator.clipboard && navigator.clipboard.writeText) {
       copyButton.addEventListener("click", function () {
         navigator.clipboard.writeText(draft).then(function () {
           copyButton.textContent = "Texto copiado";
-          window.setTimeout(function () {
-            copyButton.textContent = "Copiar texto";
-          }, 1600);
+          window.setTimeout(function () { copyButton.textContent = "Copiar texto"; }, 1600);
         });
       });
     }
+
+    // Eventos IA inline
+    if (isAI) {
+      var runBtn = root.querySelector("#ai-run-btn");
+      var outputEl = root.querySelector("#ai-output");
+      var copyAIBtn = root.querySelector("#ai-copy-btn");
+      var lastResponse = "";
+
+      if (runBtn && hasKey) {
+        runBtn.addEventListener("click", function () {
+          runBtn.disabled = true;
+          runBtn.textContent = "Analisando...";
+          if (outputEl) {
+            outputEl.textContent = "Aguardando resposta...";
+            outputEl.className = "assistant-draft gemini-output is-loading";
+          }
+          
+          var callApi = isGemini ? callGeminiApi : callOpenAIApi;
+          
+          callApi(draft, function (text) {
+            lastResponse = text;
+            if (outputEl) {
+              outputEl.textContent = text;
+              outputEl.className = "assistant-draft gemini-output";
+            }
+            runBtn.disabled = false;
+            runBtn.textContent = "Analisar novamente";
+            if (copyAIBtn) copyAIBtn.style.display = "";
+          }, function (errMsg) {
+            if (outputEl) {
+              outputEl.textContent = "Erro: " + errMsg;
+              outputEl.className = "assistant-draft gemini-output is-error";
+            }
+            runBtn.disabled = false;
+            runBtn.textContent = "Tentar novamente";
+          });
+        });
+      }
+
+      if (copyAIBtn && navigator.clipboard && navigator.clipboard.writeText) {
+        copyAIBtn.addEventListener("click", function () {
+          if (!lastResponse) return;
+          navigator.clipboard.writeText(lastResponse).then(function () {
+            copyAIBtn.textContent = "Copiado!";
+            window.setTimeout(function () { copyAIBtn.textContent = "Copiar analise"; }, 1600);
+          });
+        });
+      }
+    }
   }
+
+
 
   function renderWorkflowView() {
     var params = new URLSearchParams(window.location.search);
@@ -2903,6 +3440,7 @@
       "<button class='assistant-button' type='button' id='workflow-copy-package'>Copiar pacote</button>",
       "<button class='assistant-button' type='button' id='workflow-download-package'>Baixar TXT</button>",
       "<a class='assistant-button is-link' href='https://notebooklm.google.com/' target='_blank' rel='noopener noreferrer'>Abrir NotebookLM</a>",
+      "<button class='assistant-button gemini-run-btn' type='button' id='gemini-workflow-btn'" + (!!getGeminiKey() ? "" : " disabled title='Configure a Gemini API Key'") + ">✦ Analisar com Gemini</button>",
       "</div>",
       "</article>",
       "<section class='workflow-compare-grid'>",
@@ -3011,6 +3549,29 @@
           window.setTimeout(function () {
             copyFinalButton.textContent = "Copiar fechamento";
           }, 1600);
+        });
+      });
+    }
+
+    // Gemini na Mesa Híbrida — preenche a textarea de retorno automaticamente
+    var geminiWorkflowBtn = root.querySelector("#gemini-workflow-btn");
+    if (geminiWorkflowBtn && getGeminiKey()) {
+      geminiWorkflowBtn.addEventListener("click", function () {
+        geminiWorkflowBtn.disabled = true;
+        geminiWorkflowBtn.textContent = "Analisando...";
+        callGeminiApi(packageText, function (text) {
+          if (notebookInput) {
+            notebookInput.value = text;
+            saveNotebookNotes(entry, text);
+            refreshWorkflowPanels(text);
+            setStatus("Analise Gemini salva como retorno do NotebookLM.", "ok");
+          }
+          geminiWorkflowBtn.disabled = false;
+          geminiWorkflowBtn.textContent = "✦ Analisar com Gemini";
+        }, function (errMsg) {
+          setStatus("Gemini: " + errMsg, "warn");
+          geminiWorkflowBtn.disabled = false;
+          geminiWorkflowBtn.textContent = "✦ Tentar novamente";
         });
       });
     }

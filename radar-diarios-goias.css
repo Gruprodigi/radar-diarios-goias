@@ -2395,3 +2395,386 @@ ol {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Gemini AI Integration ──────────────────────────────────────────────── */
+
+:root {
+  --gemini-blue: #1a73e8;
+  --gemini-blue-soft: rgba(26, 115, 232, 0.08);
+  --gemini-blue-border: rgba(26, 115, 232, 0.22);
+  --gemini-green: #0d9e6a;
+  --gemini-green-soft: rgba(13, 158, 106, 0.08);
+}
+
+.gemini-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--gemini-blue-soft);
+  color: var(--gemini-blue);
+  border: 1px solid var(--gemini-blue-border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+/* Cartão Gemini na assistant view */
+.gemini-card {
+  border-color: var(--gemini-blue-border) !important;
+  background: linear-gradient(135deg, rgba(26, 115, 232, 0.03), var(--surface)) !important;
+}
+
+.gemini-card .assistant-card-head {
+  border-bottom: 1px solid var(--gemini-blue-border);
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+/* Output da resposta Gemini */
+.gemini-output {
+  min-height: 120px;
+  border-left: 3px solid var(--gemini-blue-border);
+  background: var(--gemini-blue-soft);
+  color: #1e2940;
+  font-size: 14px;
+  white-space: pre-wrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.gemini-output.is-loading {
+  border-left-color: var(--gemini-blue);
+  background: rgba(26, 115, 232, 0.05);
+  color: var(--muted);
+  animation: gemini-pulse 1.4s ease-in-out infinite;
+}
+
+.gemini-output.is-error {
+  border-left-color: var(--coral);
+  background: rgba(185, 83, 55, 0.07);
+  color: var(--coral);
+}
+
+@keyframes gemini-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Botão Gemini */
+.gemini-run-btn {
+  background: var(--gemini-blue) !important;
+  color: #fff !important;
+  border-color: var(--gemini-blue) !important;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.gemini-run-btn:hover:not(:disabled) {
+  background: #1558b0 !important;
+  border-color: #1558b0 !important;
+}
+
+.gemini-run-btn:disabled {
+  background: rgba(26, 115, 232, 0.4) !important;
+  border-color: transparent !important;
+  cursor: not-allowed;
+}
+
+/* Link inativo (sem API Key configurada) */
+.assistant-link.is-inactive {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Painel de configuração da API Key */
+.gemini-config-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--gemini-blue-border);
+  border-radius: 8px;
+  background: var(--gemini-blue-soft);
+}
+
+.gemini-config-inner {
+  display: grid;
+  gap: 12px;
+}
+
+.gemini-config-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.gemini-config-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.gemini-key-input {
+  flex: 1;
+  min-width: 200px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--gemini-blue-border);
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.gemini-key-input:focus {
+  outline: 2px solid rgba(26, 115, 232, 0.22);
+  border-color: var(--gemini-blue);
+}
+
+.gemini-config-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.gemini-config-note a {
+  color: var(--gemini-blue);
+  text-decoration: underline;
+}
+
+/* Compacto: cartão prompt quando Gemini está ativo */
+.assistant-draft-card.is-compact {
+  opacity: 0.82;
+}
+
+.assistant-draft-card.is-compact .assistant-card-head h2 {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.assistant-draft.assistant-draft-compact {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Responsivo */
+@media (max-width: 680px) {
+  .gemini-config-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gemini-key-input {
+    min-width: 0;
+  }
+}
+
+/* ── OpenAI / ChatGPT Integration ─────────────────────────────────────────── */
+
+:root {
+  --openai-green: #10a37f;
+  --openai-green-soft: rgba(16, 163, 127, 0.08);
+  --openai-green-border: rgba(16, 163, 127, 0.22);
+}
+
+.openai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--openai-green-soft);
+  color: var(--openai-green);
+  border: 1px solid var(--openai-green-border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+/* ── Modal Global de APIs ─────────────────────────────────────────────────── */
+
+.global-api-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.global-api-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.api-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.api-modal-content {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-pop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.api-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-soft);
+}
+
+.api-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.api-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.api-modal-close:hover {
+  color: var(--coral);
+}
+
+.api-modal-body {
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+.api-modal-intro {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.api-config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.api-config-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.api-config-group small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.api-config-group small a {
+  color: var(--gemini-blue);
+  text-decoration: underline;
+}
+
+.api-key-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.api-key-input:focus {
+  outline: 2px solid var(--gemini-blue-border);
+  border-color: var(--gemini-blue);
+}
+
+.api-env-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.api-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  background: var(--surface-soft);
+}
+
+.api-save-btn {
+  background: var(--ink) !important;
+  color: var(--surface) !important;
+  border-color: var(--ink) !important;
+}
+
+.api-save-btn:hover {
+  background: #333 !important;
+}
+
+/* ── Coverage Modal Styles ─────────────────────────────────────────────── */
+
+.coverage-item-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.coverage-item-card .api-config-group {
+  margin-bottom: 12px;
+}
+
+.coverage-item-card .api-config-group:last-child {
+  margin-bottom: 0;
+}
+
+.global-coverage-btn {
+  bottom: 80px; /* Acima do botão de APIs de IA */
+}

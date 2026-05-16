@@ -5,3 +5,4 @@ server.pid
 *.bak
 Thumbs.db
 .DS_Store
+env.js

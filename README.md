@@ -16,7 +16,8 @@ Livro de pautas em HTML, CSS e JavaScript para leitura de diarios oficiais de Go
 - `build-pauteiro-cobertura.ps1`: script para regenerar a camada de cobertura municipal a partir do IBGE e da base atual.
 - `build-pauteiro-arquivo.ps1`: script para regenerar o bucket anual do arquivo.
 - `radar-diarios-goias.css`: estilos da interface.
-- `radar-diarios-goias-app.js`: montagem dinamica das paginas.
+- `radar-diarios-goias-app.js`: montagem dinamica das paginas, integracao de IA e UI.
+- `env.example.js`: template de configuracao opcional de chaves de API.
 
 ## Como abrir
 
@@ -38,6 +39,16 @@ flowchart LR
 
 ## Escopo atual
 
+## Novidades da Última Atualização
+
+O PAUTEIRO! foi atualizado para uma arquitetura 100% *client-side* (serverless) e agora suporta as seguintes ferramentas embarcadas:
+
+### Integração Nativa de IA (Gemini & ChatGPT)
+- **Modal de APIs Global**: Clique no botão "⚙️ APIs IA" no rodapé para adicionar suas próprias chaves de API (Google AI Studio ou OpenAI). As chaves ficam salvas de forma segura apenas no *localStorage* do seu navegador. Nenhuma chave é enviada para servidores de terceiros (além da própria provedora).
+- **Análise Inline**: Geração de resumos, leads e dicas de investigação direto na interface usando o modelo `gemini-2.5-flash-lite` (padrão) ou `gpt-4o-mini`.
+
+### Gerenciamento de Coberturas (Fontes)
+- **Painel de Coberturas**: Adicionado o botão "🔗 Coberturas" que abre um modal dinâmico. Permite editar os links oficiais (ex: DOMP, Sileg, DOE) ou adicionar novos alvos de raspagem (ex: Tribunal de Contas, novos Municípios). As alterações também ficam salvas localmente, e há uma função para exportar a configuração JSON para adicionar ao repositório oficial.
 - 2026 segue como caderno corrente;
 - 2024 e 2025 ja entram como arquivo historico pronto para carga;
 - abril de 2026 esta preenchido ate 18/04/2026;
